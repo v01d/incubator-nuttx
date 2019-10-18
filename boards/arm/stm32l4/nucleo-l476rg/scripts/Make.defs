@@ -87,8 +87,8 @@ ifeq ($(CONFIG_LIBCXX),y)
   # supc++ is always needed with libcxx
 
   LIBSUPXX = ${shell $(CC) $(CFLAGS) --print-file-name=libsupc++.a}
-  EXTRA_LIBPATHS = -L "${shell dirname "$(LIBSUPXX)"}"
-  EXTRA_LIBS = -lsupc++
+  override EXTRA_LIBPATHS += -L "${shell dirname "$(LIBSUPXX)"}"
+  override EXTRA_LIBS += -lsupc++
 endif
 
 NXFLATLDFLAGS1 = -r -d -warn-common
