@@ -57,6 +57,8 @@
 
 #include <arch/board/board.h>
 
+#include <lcd_dev/lcd_dev.h>
+
 #include "nucleo-l476rg.h"
 
 #ifdef HAVE_RTC_DRIVER
@@ -453,6 +455,10 @@ int board_app_initialize(uintptr_t arg)
       return ret;
     }
 #endif
+
+  /* bicycle companion extra initialization */
+  board_lcd_initialize();
+  lcddev_register(0);
 
   return ret;
 }
