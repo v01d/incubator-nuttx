@@ -108,6 +108,10 @@ ifeq ($(CONFIG_TIMER),y)
 CSRCS += stm32_timer.c
 endif
 
+ifeq ($(CONFIG_LCD_SHARP_MEMLCD),y)
+CSRCS += stm32_memlcd.c
+endif
+
 ifeq ($(CONFIG_LIB_BOARDCTL),y)
 CSRCS += stm32_appinit.c
 endif

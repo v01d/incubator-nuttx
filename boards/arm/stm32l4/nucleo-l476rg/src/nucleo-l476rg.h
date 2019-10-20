@@ -161,6 +161,17 @@
                            GPIO_OUTPUT_SET|GPIO_PORTB|GPIO_PIN13)
 #endif
 
+#ifdef CONFIG_LCD_SHARP_MEMLCD
+#define GPIO_MEMLCD_EXTCOMIN (GPIO_PORTC | GPIO_PIN7 | GPIO_OUTPUT_CLEAR | \
+                              GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz)
+
+#define GPIO_MEMLCD_DISP     (GPIO_PORTB | GPIO_PIN4 | GPIO_OUTPUT_CLEAR | \
+                              GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz)
+
+#define GPIO_MEMLCD_CS       (GPIO_PORTA | GPIO_PIN7 | GPIO_OUTPUT_CLEAR | \
+                              GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz)
+#endif
+
 /* Devices on the onboard bus.
  *
  * Note that these are unshifted addresses.

@@ -98,6 +98,10 @@ void weak_function stm32l4_spiinitialize(void)
 #ifdef CONFIG_LCD_PCD8544
   stm32l4_configgpio(STM32_LCD_CS);       /* PCD8544 chip select */
 #endif
+
+#ifdef CONFIG_LCD_SHARP_MEMLCD
+  stm32l4_configgpio(GPIO_MEMLCD_CS);
+#endif
 #endif
 
 #ifdef CONFIG_STM32L4_SPI2
@@ -157,6 +161,13 @@ void stm32l4_spi1select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected
   if (devid == SPIDEV_DISPLAY(0))
     {
       stm32l4_gpiowrite(STM32_LCD_CS, !selected);
+    }
+#endif
+
+#ifdef CONFIG_LCD_SHARP_MEMLCD
+  if (devid == SPIDEV_DISPLAY(0))
+    {
+      stm32l4_gpiowrite(GPIO_MEMLCD_CS, selected);
     }
 #endif
 }
