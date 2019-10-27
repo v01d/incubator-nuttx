@@ -99,12 +99,12 @@ static int up_lcdirqattach(xcpt_t isr, void * arg)
 
   if (isr != NULL)
     {
-      STM32L4_TIM_SETISR(tim, up_lcdextcominisr, arg, ATIM_SR_UIF);
+      STM32L4_TIM_SETISR(tim, up_lcdextcominisr, arg, 0);
       g_isr = isr;
     }
   else
     {
-      STM32L4_TIM_SETISR(tim, NULL, NULL, ATIM_SR_UIF);
+      STM32L4_TIM_SETISR(tim, NULL, NULL, 0);
       g_isr = NULL;
     }
 
