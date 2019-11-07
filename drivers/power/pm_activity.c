@@ -49,7 +49,7 @@
 
 #include "pm.h"
 
-#ifdef CONFIG_PM
+#if defined(CONFIG_PM)
 
 /****************************************************************************
  * Public Functions
@@ -197,4 +197,4 @@ uint32_t pm_staycount(int domain, enum pm_state_e state)
   return pdom->stay[state];
 }
 
-#endif /* CONFIG_PM */
+#endif /* defined(CONFIG_PM) */

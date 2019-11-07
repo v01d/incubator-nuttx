@@ -291,6 +291,80 @@ struct pm_user_governor_state_s
   enum pm_state_e state;
 };
 
+/* An instance of a given PM governor */
+
+struct pm_governor_s
+{
+
+  /**************************************************************************
+   * Name: initialize
+   *
+   * Description:
+   *   Invoked by the PM system during initialization, to allow the governor
+   *   to initialize its internal data. This can be left to NULL if not needed
+   *   by the governor.
+   *
+   *   NOTE: since this will be called from pm_initialize(), the system
+   *   is in very early boot state when this callback is invoked. Thus,
+   *   only ver basic initialization should be performed (e.g. no memory
+   *   should be allocated).
+   *
+   **************************************************************************/
+
+  void (*initialize)(void);
+
+  /**************************************************************************
+   * Name: statechanged
+   *
+   * Description:
+   *   Invoked by the PM system when the power state is changed. This can be
+   *   left to NULL if this notification is not needed by the governor.
+   *
+   **************************************************************************/
+
+  void (*statechanged)(int domain, enum pm_state_e newstate);
+
+  /**************************************************************************
+   * Name: checkstate
+   *
+   * Description:
+   *   Invoked by the PM system to obtain the governor's suggestion for the
+   *   power level to set. Implementing this callback is mandatory for a
+   *   governor since recommending power levels is its main responsibility.
+   *
+   *   NOTE: the governor should consider the "stay" count in order to hold
+   *   off the recommendation of a lower-power level.
+   *
+   **************************************************************************/
+
+  enum pm_state_e (*checkstate)(int domain);
+
+  /**************************************************************************
+   * Name: activity
+   *
+   * Description:
+   *   Invoked by the PM system when a driver reports activity via
+   *   pm_activity(). This may or may not be useful to the governor to
+   *   recommend power levels.
+   *   It can be left NULL, in which case it will not be invoked.
+   *
+   **************************************************************************/
+
+  void (*activity)(int domain, int count);  
+
+  /* Private data for governor's internal use */
+
+  void* priv;
+};
+
+/* To be used for accessing the user governor via ioctl calls */
+
+struct pm_user_governor_state_s
+{
+  int domain;
+  enum pm_state_e state;
+};
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
