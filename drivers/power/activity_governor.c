@@ -222,7 +222,11 @@ struct pm_governor_s g_pmgovernor =
 
 static void governor_initialize(void)
 {
+<<<<<<< HEAD
   FAR struct pm_domain_state_s *pdomstate;
+=======
+  struct pm_domain_state_s *pdomstate;
+>>>>>>> drivers/power:  Repaired pm branch.
   int i;
 
   for (i = 0; i < CONFIG_PM_NDOMAINS; i++)
@@ -621,7 +625,11 @@ static void governor_timer(int domain)
  * Public Functions
  ****************************************************************************/
 
+<<<<<<< HEAD
 FAR struct pm_governor_s *pm_activity_governor_initialize(void)
+=======
+struct pm_governor_s *pm_activity_governor_initialize(void)
+>>>>>>> drivers/power:  Repaired pm branch.
 {
   return &g_pmgovernor;
 }
