@@ -53,10 +53,11 @@
 #include <nuttx/spi/spi.h>
 #include <nuttx/lcd/lcd.h>
 #include <nuttx/lcd/memlcd.h>
+#include <nuttx/timers/pwm.h>
 
 #include "stm32l4_gpio.h"
 #include "stm32l4_spi.h"
-#include "stm32l4_tim.h"
+#include "stm32l4_pwm.h"
 #include "nucleo-l476rg.h"
 
 /****************************************************************************
@@ -73,40 +74,17 @@
 
 static struct lcd_dev_s *l_lcddev;
 static struct spi_dev_s *spi;
-static struct stm32l4_tim_dev_s *tim;
-static xcpt_t g_isr;
+struct pwm_lowerhalf_s *pwm;
+struct pwm_info_s pwminfo;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
-static int up_lcdextcominisr(int irq, void *context, void *arg)
-{
-  STM32L4_TIM_ACKINT(tim, ATIM_SR_UIF);
-  if (g_isr == NULL)
-    {
-      lcderr("ERROR: error, irq not attached, disabled\n");
-      STM32L4_TIM_DISABLEINT(tim, ATIM_DIER_UIE);
-      return OK;
-    }
-
-  return g_isr(irq, context, arg);
-}
-
 static int up_lcdirqattach(xcpt_t isr, void * arg)
 {
-  lcdinfo("%s IRQ\n", isr == NULL ? "Detach" : "Attach");
-
-  if (isr != NULL)
-    {
-      STM32L4_TIM_SETISR(tim, up_lcdextcominisr, arg, 0);
-      g_isr = isr;
-    }
-  else
-    {
-      STM32L4_TIM_SETISR(tim, NULL, NULL, 0);
-      g_isr = NULL;
-    }
+  UNUSED(isr);
+  UNUSED(arg);
 
   return OK;
 }
@@ -118,20 +96,19 @@ static void up_lcddispcontrol(bool on)
   if (on)
     {
       stm32l4_gpiowrite(GPIO_MEMLCD_DISP, 1);
-      STM32L4_TIM_ENABLEINT(tim, ATIM_DIER_UIE);
+      pwm->ops->start(pwm, &pwminfo);
     }
   else
     {
       stm32l4_gpiowrite(GPIO_MEMLCD_DISP, 0);
-      STM32L4_TIM_DISABLEINT(tim, ATIM_DIER_UIE);
+      pwm->ops->stop(pwm);
     }
 }
 
 #ifndef CONFIG_MEMLCD_EXTCOMIN_MODE_HW
 static void up_lcdsetpolarity(bool pol)
 {
-  //stm32l4_gpiowrite(GPIO_LED, pol);
-  stm32l4_gpiowrite(GPIO_MEMLCD_EXTCOMIN, pol);
+  UNUSED(pol);
 }
 #endif
 
@@ -139,7 +116,7 @@ static void up_lcdsetvcomfreq(unsigned int freq)
 {
   lcdinfo("freq: %d\n", freq);
   DEBUGASSERT(freq >= 1 && freq <= 60);
-  STM32L4_TIM_SETPERIOD(tim, TIMER_FREQ / freq);
+  pwminfo.frequency = freq;
 }
 
 static FAR struct memlcd_priv_s memlcd_priv =
@@ -178,15 +155,11 @@ FAR int board_lcd_initialize(void)
   stm32l4_configgpio(GPIO_MEMLCD_EXTCOMIN);
   stm32l4_configgpio(GPIO_MEMLCD_DISP);
 
-  lcdinfo("configure EXTCOMIN timer\n");
-  if (tim == NULL)
-    {
-      tim = stm32l4_tim_init(2);
-      DEBUGASSERT(tim);
-      STM32L4_TIM_SETPERIOD(tim, TIMER_FREQ / EXTCOMIN_FREQ);
-      STM32L4_TIM_SETCLOCK(tim, TIMER_FREQ);
-      STM32L4_TIM_SETMODE(tim, STM32L4_TIM_MODE_UP);
-    }
+  lcdinfo("configure EXTCOMIN PWM\n");
+  pwm = stm32l4_lp_pwminitialize(1);
+  pwm->ops->setup(pwm);
+  pwminfo.duty = b16HALF;
+  pwminfo.frequency = 60; /* sane default */
 
   lcdinfo("init lcd\n");
   l_lcddev = memlcd_initialize(spi, &memlcd_priv, 0);
