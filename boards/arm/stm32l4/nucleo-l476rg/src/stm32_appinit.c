@@ -57,7 +57,9 @@
 
 #include <arch/board/board.h>
 
+#ifdef CONFIG_LCD_DEV
 #include <lcd_dev/lcd_dev.h>
+#endif
 
 #include "nucleo-l476rg.h"
 
@@ -65,6 +67,8 @@
 #  include <nuttx/timers/rtc.h>
 #  include "stm32l4_rtc.h"
 #endif
+
+#include <nuttx/input/buttons.h>
 
 #include "stm32l4_i2c.h"
 
@@ -457,8 +461,18 @@ int board_app_initialize(uintptr_t arg)
 #endif
 
   /* bicycle companion extra initialization */
+
+#ifdef CONFIG_LCD
   board_lcd_initialize();
+#endif
+
+#ifdef CONFIG_LCD_DEV
   lcddev_register(0);
+#endif
+
+#ifdef CONFIG_BUTTONS_LOWER
+  btn_lower_initialize("/dev/buttons");
+#endif
 
   return ret;
 }
