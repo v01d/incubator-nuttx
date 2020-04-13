@@ -219,11 +219,12 @@
 #define LED_STARTED      0
 #define LED_HEAPALLOCATE 0
 #define LED_IRQSENABLED  0
-#define LED_STACKCREATED 1
-#define LED_INIRQ        1
-#define LED_SIGNAL       2
-#define LED_ASSERTION    2
+#define LED_STACKCREATED 0
+#define LED_INIRQ        0
+#define LED_SIGNAL       0
+#define LED_ASSERTION    0
 #define LED_PANIC        1
+#define LED_IDLE         1
 
 /* Buttons
  *
@@ -261,8 +262,7 @@
 #define GPIO_TIM1_CH2OUT  GPIO_TIM1_CH2OUT_1
 #define GPIO_TIM1_CH2NOUT GPIO_TIM1_CH2N_1
 
-#define GPIO_LPTIM1_CH1OUT  GPIO_LPTIM1_OUT_1
-#define GPIO_LPTIM2_CH1OUT  GPIO_LPTIM2_OUT_2
+#define GPIO_LPTIM1_CH1OUT  GPIO_LPTIM1_OUT_2
 
 /****************************************************************************
  * Public Data

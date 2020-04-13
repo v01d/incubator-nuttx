@@ -152,7 +152,6 @@ FAR int board_lcd_initialize(void)
   DEBUGASSERT(spi);
 
   lcdinfo("configure related io\n");
-  stm32l4_configgpio(GPIO_MEMLCD_EXTCOMIN);
   stm32l4_configgpio(GPIO_MEMLCD_DISP);
 
   lcdinfo("configure EXTCOMIN PWM\n");
