@@ -87,7 +87,7 @@ int stm32l4_pwm_setup(void)
 {
   static bool initialized = false;
   struct pwm_lowerhalf_s *pwm;
-  int ret;
+  int ret = OK;
 
   /* Have we already initialized? */
 
@@ -264,7 +264,7 @@ int stm32l4_pwm_setup(void)
         }
 #endif
 
-#if defined(CONFIG_STM32L4_LPTIM1_PWM)
+#if defined(CONFIG_STM32L4_LPTIM1_PWM) && !defined(CONFIG_LCD) /* bicycle-companion: memlcd driver claims LPTIM1 for PWM */
       pwm = stm32l4_lp_pwminitialize(1);
       if (!pwm)
         {
@@ -305,7 +305,7 @@ int stm32l4_pwm_setup(void)
       initialized = true;
     }
 
-  return OK;
+  return ret;
 }
 
 #endif /* CONFIG_PWM */
