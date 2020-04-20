@@ -96,7 +96,8 @@
 
 /* Bytes per logical row and column */
 
-#define MEMLCD_XSTRIDE       (MEMLCD_XRES >> 3)
+#define MEMLCD_DUMMY_BYTES   2
+#define MEMLCD_XSTRIDE       ((MEMLCD_XRES >> 3) + MEMLCD_DUMMY_BYTES)
 #define MEMLCD_YSTRIDE       (MEMLCD_YRES >> 3)
 
 /* display memory allocation */
@@ -157,6 +158,8 @@ static void memlcd_deselect(FAR struct spi_dev_s *spi);
 
 static int memlcd_putrun(fb_coord_t row, fb_coord_t col,
                          FAR const uint8_t * buffer, size_t npixels);
+static int memlcd_putrows(fb_coord_t row, FAR const uint8_t *buffer,
+                          size_t nrows);
 static int memlcd_getrun(fb_coord_t row, fb_coord_t col, FAR uint8_t * buffer,
                          size_t npixels);
 
@@ -194,10 +197,11 @@ static const struct fb_videoinfo_s g_videoinfo =
 
 static const struct lcd_planeinfo_s g_planeinfo =
 {
-  .putrun = memlcd_putrun,           /* Put a run into lcd memory */
-  .getrun = memlcd_getrun,           /* Get a run from lcd memory */
-  .buffer = (uint8_t *) g_runbuffer, /* Run scratch buffer */
-  .bpp = MEMLCD_BPP,                 /* Bits-per-pixel */
+  .putrun  = memlcd_putrun,           /* Put a run into lcd memory */
+  .putrows = memlcd_putrows,          /* Put multiple lines into lcd memory */
+  .getrun  = memlcd_getrun,           /* Get a run from lcd memory */
+  .buffer  = (uint8_t *) g_runbuffer, /* Run scratch buffer */
+  .bpp     = MEMLCD_BPP,              /* Bits-per-pixel */
 };
 
 /* This is the oled driver instance (only a single device is supported for now) */
@@ -473,7 +477,7 @@ static int memlcd_putrun(fb_coord_t row, fb_coord_t col,
 
   cmd = MEMLCD_CMD_UPDATE | row << 8;
   SPI_SNDBLOCK(mlcd->spi, &cmd, 2);
-  SPI_SNDBLOCK(mlcd->spi, pfb, MEMLCD_YRES / 8 + MEMLCD_CONTROL_BYTES);
+  SPI_SNDBLOCK(mlcd->spi, pfb, MEMLCD_XRES / 8 + MEMLCD_CONTROL_BYTES);
   cmd = 0xffff;
   SPI_SNDBLOCK(mlcd->spi, &cmd, 2);
 
@@ -482,6 +486,70 @@ static int memlcd_putrun(fb_coord_t row, fb_coord_t col,
   memlcd_deselect(mlcd->spi);
 
   return OK;
+}
+
+/****************************************************************************
+ * Name:  memlcd_putrows
+ *
+ * Description:
+ *   This method can be used to write multiple raster lines to the LCD:
+ *
+ *  row       - First row to write to (range: 0 <= row < yres)
+ *  buffer    - The buffer containing the data to be written to the LCD
+ *  nrows     - The number of rows to write to the LCD
+ *              (range: 0 < nrows <= yres-row)
+ *
+ * NOTE: driver may not support this, thus this callback might be NULL
+ */
+
+static int memlcd_putrows(fb_coord_t row, FAR const uint8_t *buffer,
+                          size_t nrows)
+{
+  FAR struct memlcd_dev_s *mlcd = (FAR struct memlcd_dev_s *)&g_memlcddev;
+  uint16_t cmd;
+  uint8_t *pfb;
+  int i, j;
+
+  DEBUGASSERT(buffer);
+  lcdinfo("row: %d nrows: %d\n", row, nrows);
+
+  /* copy row-by-row */
+
+  pfb = mlcd->fb + row * MEMLCD_XSTRIDE;
+
+  for (i = 0; i < nrows; i++)
+    {
+#ifdef CONFIG_LCD_PACKEDMSFIRST
+      /* TODO: copy inverting each byte */
+#error "MSFIRST not supported for MEMLCD"
+#else
+      /* bit order coincides, simply copy buffer */
+
+      memcpy(pfb + i * MEMLCD_XSTRIDE, buffer + i * (MEMLCD_XSTRIDE - MEMLCD_DUMMY_BYTES),
+             MEMLCD_XSTRIDE - MEMLCD_DUMMY_BYTES);
+#endif
+    }
+
+  /* Need to adjust start row by one because Memory LCD starts counting
+   * lines from 1, while the display interface starts from 0.
+   */
+
+  row++;
+
+  memlcd_select(mlcd->spi);
+
+  /* XXX Ensure 6us here */
+
+  cmd = MEMLCD_CMD_UPDATE | row << 8;
+  SPI_SNDBLOCK(mlcd->spi, &cmd, 2);
+  SPI_SNDBLOCK(mlcd->spi, pfb, nrows * MEMLCD_XSTRIDE);
+
+  /* XXX Ensure 2us here */
+
+  memlcd_deselect(mlcd->spi);
+
+  return OK;
+
 }
 
 /****************************************************************************
@@ -715,6 +783,7 @@ FAR struct lcd_dev_s *memlcd_initialize(FAR struct spi_dev_s *spi,
                                         unsigned int devno)
 {
   FAR struct memlcd_dev_s *mlcd = &g_memlcddev;
+  int i;
 
   DEBUGASSERT(spi && priv && devno == 0);
 
@@ -724,6 +793,18 @@ FAR struct lcd_dev_s *memlcd_initialize(FAR struct spi_dev_s *spi,
   mlcd->spi = spi;
 
   mlcd->priv->attachirq(memlcd_extcominisr, mlcd);
+
+  /* initialize FB to contain required commands per row */
+
+  memset(mlcd->fb, 0, MEMLCD_FBSIZE);
+
+  for (i = 0; i < MEMLCD_YRES; i++)
+    {
+      /* write row number + 2 at the end of each memory row */
+
+      mlcd->fb[i * MEMLCD_XSTRIDE +
+          MEMLCD_XSTRIDE - MEMLCD_DUMMY_BYTES + 1] = i + 2;
+    }
 
   lcdinfo("done\n");
   return &mlcd->dev;
