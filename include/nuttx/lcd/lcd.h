@@ -82,6 +82,18 @@ struct lcd_planeinfo_s
   int (*putrun)(fb_coord_t row, fb_coord_t col, FAR const uint8_t *buffer,
                 size_t npixels);
 
+  /* This method can be used to write multiple raster lines to the LCD:
+   *
+   *  row       - First row to write to (range: 0 <= row < yres)
+   *  buffer    - The buffer containing the data to be written to the LCD
+   *  nrows     - The number of rows to write to the LCD
+   *              (range: 0 < nrows <= yres-row)
+   *
+   * NOTE: driver may not support this, thus this callback might be NULL
+   */
+
+  int (*putrows)(fb_coord_t row, FAR const uint8_t *buffer, size_t nrows);
+
   /* This method can be used to read a partial raster line from the LCD:
    *
    *  row     - Starting row to read from (range: 0 <= row < yres)
