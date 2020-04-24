@@ -508,7 +508,7 @@ static int memlcd_putrows(fb_coord_t row, FAR const uint8_t *buffer,
   FAR struct memlcd_dev_s *mlcd = (FAR struct memlcd_dev_s *)&g_memlcddev;
   uint16_t cmd;
   uint8_t *pfb;
-  int i, j;
+  int i;
 
   DEBUGASSERT(buffer);
   lcdinfo("row: %d nrows: %d\n", row, nrows);
