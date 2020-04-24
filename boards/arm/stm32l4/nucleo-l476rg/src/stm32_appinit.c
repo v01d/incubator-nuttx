@@ -474,15 +474,10 @@ int board_app_initialize(uintptr_t arg)
   btn_lower_initialize("/dev/buttons");
 #endif
 
+  stm32l4_pulsecounter_initialize();
+
   return ret;
 }
-
-#ifdef CONFIG_BOARDCTL_IOCTL
-int board_ioctl(unsigned int cmd, uintptr_t arg)
-{
-  return -ENOTTY;
-}
-#endif
 
 #if defined(CONFIG_BOARDCTL_UNIQUEID)
 int board_uniqueid(uint8_t *uniqueid)

@@ -113,7 +113,9 @@ CSRCS += stm32_memlcd.c
 endif
 
 ifeq ($(CONFIG_LIB_BOARDCTL),y)
-CSRCS += stm32_appinit.c
+CSRCS += stm32_appinit.c stm32_boardctl.c
 endif
+
+CSRCS += stm32_pulsecounter.c
 
 include $(TOPDIR)/boards/Board.mk

@@ -454,4 +454,8 @@ int stm32_as726xinitialize(FAR const char *devpath);
 int stm32_bmp180initialize(FAR const char *devpath);
 #endif
 
+void stm32l4_pulsecounter_initialize(void);
+void stm32l4_pulsecounter_deinitialize(void);
+uint32_t stm32l4_pulsecounter_getcounter(void);
+
 #endif /* __BOARDS_ARM_STM32L4_NUCLEO_L476RG_SRC_NUCLEO_L476RG_H */
