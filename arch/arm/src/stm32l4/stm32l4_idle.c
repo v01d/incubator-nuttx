@@ -101,8 +101,6 @@ static void up_idlepm(void)
 
       /* Perform board-specific, state-dependent logic here */
 
-      _info("newstate= %d oldstate=%d\n", newstate, oldstate);
-
       /* Then force the global state change */
 
       ret = pm_changestate(PM_IDLE_DOMAIN, newstate);
@@ -124,9 +122,14 @@ static void up_idlepm(void)
       switch (newstate)
         {
         case PM_NORMAL:
-          break;
-
         case PM_IDLE:
+          /* Sleep until an interrupt occurs to save power. */
+
+#if !(defined(CONFIG_DEBUG_SYMBOLS) && defined(CONFIG_STM32L4_DISABLE_IDLE_SLEEP_DURING_DEBUG))
+            BEGIN_IDLE();
+            asm("WFI");
+            END_IDLE();
+#endif
           break;
 
         case PM_STANDBY:
@@ -140,6 +143,10 @@ static void up_idlepm(void)
           /* Set correct clock again after returning from STOP */
 
           stm32l4_clockenable();
+
+          /* Update system time from RTC */
+
+          clock_synchronize();
 
           /* Inform of all drivers of the new state */
 
@@ -160,6 +167,16 @@ static void up_idlepm(void)
         }
 
       leave_critical_section(flags);
+    }
+  else
+    {
+      /* Sleep until an interrupt occurs to save power. */
+
+#if !(defined(CONFIG_DEBUG_SYMBOLS) && defined(CONFIG_STM32L4_DISABLE_IDLE_SLEEP_DURING_DEBUG))
+        BEGIN_IDLE();
+        asm("WFI");
+        END_IDLE();
+#endif
     }
 }
 #else
@@ -196,14 +213,6 @@ void up_idle(void)
   /* Perform IDLE mode power management */
 
   up_idlepm();
-
-  /* Sleep until an interrupt occurs to save power. */
-
-#if !(defined(CONFIG_DEBUG_SYMBOLS) && defined(CONFIG_STM32L4_DISABLE_IDLE_SLEEP_DURING_DEBUG))
-  BEGIN_IDLE();
-  asm("WFI");
-  END_IDLE();
-#endif
 
 #endif
 }
