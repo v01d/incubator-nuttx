@@ -49,7 +49,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#if 1
+#if 0
 #  define HSI_CLOCK_CONFIG          /* HSI-16 clock configuration */
 #elif 0
 /* Make sure you installed one! */
@@ -393,10 +393,16 @@
 
 #elif defined(MSI_CLOCK_CONFIG)
 
+#define STM32L4_LSE_FREQUENCY     32768
+
 /* Use the MSI; frequ = 4 MHz; autotrim from LSE */
 
 #define STM32L4_BOARD_USEMSI      1
-#define STM32L4_BOARD_MSIRANGE    RCC_CR_MSIRANGE_4M
+#define STM32L4_BOARD_MSIRANGE    RCC_CR_MSIRANGE_24M
+//#define STM32L4_BOARD_MSIRANGE    RCC_CR_MSIRANGE_24M
+
+/* disable main PLL and use MSI for SYSCLK */
+#define STM32L4_BOARD_NOPLL
 
 /* XXX sysclk mux = pllclk */
 
@@ -434,7 +440,12 @@
 #define STM32L4_PLLSAI2CFG_PLLR         0
 #undef  STM32L4_PLLSAI2CFG_PLLR_ENABLED
 
-#define STM32L4_SYSCLK_FREQUENCY  80000000ul
+/* for MSI SYSCLK */
+#define STM32L4_SYSCLK_FREQUENCY  24000000ul
+//#define STM32L4_SYSCLK_FREQUENCY  24000000ul
+
+/* for MSI->PLL SYSCLK */
+//#define STM32L4_SYSCLK_FREQUENCY  80000000ul -> why 80, should be 48, right?
 
 /* Enable CLK48; get it from PLLSAI1 */
 
@@ -456,23 +467,27 @@
 #define STM32L4_RCC_CFGR_PPRE1    RCC_CFGR_PPRE1_HCLK       /* PCLK1 = HCLK / 1 */
 #define STM32L4_PCLK1_FREQUENCY   (STM32L4_HCLK_FREQUENCY/1)
 
+#if 0
 #define STM32L4_APB1_TIM2_CLKIN   (2*STM32L4_PCLK1_FREQUENCY)
 #define STM32L4_APB1_TIM3_CLKIN   (2*STM32L4_PCLK1_FREQUENCY)
 #define STM32L4_APB1_TIM4_CLKIN   (2*STM32L4_PCLK1_FREQUENCY)
 #define STM32L4_APB1_TIM5_CLKIN   (2*STM32L4_PCLK1_FREQUENCY)
 #define STM32L4_APB1_TIM6_CLKIN   (2*STM32L4_PCLK1_FREQUENCY)
 #define STM32L4_APB1_TIM7_CLKIN   (2*STM32L4_PCLK1_FREQUENCY)
+#endif
 
 /* Configure the APB2 prescaler */
 
 #define STM32L4_RCC_CFGR_PPRE2    RCC_CFGR_PPRE2_HCLK       /* PCLK2 = HCLK / 1 */
 #define STM32L4_PCLK2_FREQUENCY   (STM32L4_HCLK_FREQUENCY/1)
 
+#if 0
 #define STM32L4_APB2_TIM1_CLKIN   (2*STM32L4_PCLK2_FREQUENCY)
 #define STM32L4_APB2_TIM8_CLKIN   (2*STM32L4_PCLK2_FREQUENCY)
 #define STM32L4_APB2_TIM15_CLKIN  (2*STM32L4_PCLK2_FREQUENCY)
 #define STM32L4_APB2_TIM16_CLKIN  (2*STM32L4_PCLK2_FREQUENCY)
 #define STM32L4_APB2_TIM17_CLKIN  (2*STM32L4_PCLK2_FREQUENCY)
+#endif
 
 #endif
 
