@@ -316,7 +316,6 @@ static void start_note(FAR struct tone_upperhalf_s *upper, uint8_t note)
 #endif
 
   /* REVISIT: Should check the return value */
-
   tone->ops->start(tone, &upper->tone);
 }
 
@@ -328,7 +327,15 @@ static void stop_note(FAR struct tone_upperhalf_s *upper)
 {
   FAR struct pwm_lowerhalf_s *tone = upper->devtone;
 
-  tone->ops->stop(tone);
+#ifdef CONFIG_PWM_MULTICHAN
+  upper->tone.channels[0].channel = upper->channel;
+  upper->tone.channels[0].duty    = 0;
+#else
+  upper->tone.duty                = 0;
+#endif
+
+  /* REVISIT: Should check the return value */
+  tone->ops->start(tone, &upper->tone);
 }
 
 /****************************************************************************
@@ -363,7 +370,7 @@ static void start_tune(FAR struct tone_upperhalf_s *upper, const char *tune)
 
   /* Schedule a callback to start playing */
 
-  ts.tv_sec        = 1;
+  ts.tv_sec        = 0;
   ts.tv_nsec       = 0;
 
   ONESHOT_START(upper->oneshot, oneshot_callback, upper, &ts);
