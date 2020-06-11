@@ -312,6 +312,13 @@ int stm32l4_oneshot_start(FAR struct stm32l4_oneshot_s *oneshot,
 
   period = (usec * (uint64_t)oneshot->frequency) / USEC_PER_SEC;
 
+  if (period < 1)
+    {
+      /* if the period is zero, the timer will never expire */
+
+      period = 1;
+    }
+
   tmrinfo("usec=%llu period=%08llx\n", usec, period);
   DEBUGASSERT(period <= UINT32_MAX);
 
