@@ -67,11 +67,10 @@
 
 uint32_t board_button_initialize(void)
 {
-  /* Configure the single button as an input.  NOTE that EXTI interrupts are
-   * also configured for the pin.
-   */
-
-  stm32l4_configgpio(GPIO_BTN_USER);
+  stm32l4_configgpio(GPIO_BTN_UL);
+  stm32l4_configgpio(GPIO_BTN_UR);
+  stm32l4_configgpio(GPIO_BTN_BL);
+  stm32l4_configgpio(GPIO_BTN_BR);
   return NUM_BUTTONS;
 }
 
@@ -85,8 +84,12 @@ uint32_t board_buttons(void)
    * pressed.
    */
 
-  bool released = stm32l4_gpioread(GPIO_BTN_USER);
-  return !released;
+  uint32_t buttons = 0;
+  buttons |= ((!stm32l4_gpioread(GPIO_BTN_UL)) << BOARD_BUTTON_UL);
+  buttons |= ((!stm32l4_gpioread(GPIO_BTN_BL)) << BOARD_BUTTON_BL);
+  buttons |= ((!stm32l4_gpioread(GPIO_BTN_UR)) << BOARD_BUTTON_UR);
+  buttons |= ((!stm32l4_gpioread(GPIO_BTN_BR)) << BOARD_BUTTON_BR);
+  return buttons;
 }
 
 /****************************************************************************
@@ -116,11 +119,22 @@ int board_button_irq(int id, xcpt_t irqhandler, FAR void *arg)
 {
   int ret = -EINVAL;
 
-  if (id == BUTTON_USER)
-    {
-      ret = stm32l4_gpiosetevent(GPIO_BTN_USER, true, true, true,
-                                 irqhandler, arg);
-    }
+  if (id == BOARD_BUTTON_BL)
+  {
+    ret = stm32l4_gpiosetevent(GPIO_BTN_BL, true, true, false, irqhandler, arg);
+  }
+  else if (id == BOARD_BUTTON_BR)
+  {
+    ret = stm32l4_gpiosetevent(GPIO_BTN_BR, true, true, false, irqhandler, arg);
+  }
+  else if (id == BOARD_BUTTON_UR)
+  {
+    ret = stm32l4_gpiosetevent(GPIO_BTN_UR, true, true, false, irqhandler, arg);
+  }
+  else if (id == BOARD_BUTTON_UL)
+  {
+    ret = stm32l4_gpiosetevent(GPIO_BTN_UL, true, true, false, irqhandler, arg);
+  }
 
   return ret;
 }

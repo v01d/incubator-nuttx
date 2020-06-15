@@ -32,7 +32,7 @@ ifneq ($(CONFIG_DEBUG_NOOPT),y)
 endif
 
 ARCHCPUFLAGS = -fno-builtin
-ARCHCPUFLAGSXX = -fno-builtin -fno-exceptions -fcheck-new -fno-rtti
+ARCHCPUFLAGSXX = -fno-builtin -fno-exceptions -fcheck-new -fno-rtti -std=c++14 -DCONFIG_WCHAR_BUILTIN
 ARCHPICFLAGS = -fpic
 ARCHWARNINGS = -Wall -Wstrict-prototypes -Wshadow -Wundef
 ARCHWARNINGSXX = -Wall -Wshadow -Wundef
@@ -129,6 +129,9 @@ ifeq ($(CONFIG_SIM_M32),y)
   LDELFFLAGS += -melf_i386
   HOSTLDFLAGS += -m32
 endif
+
+CFLAGS += -I$(TOPDIR)/../extra_os
+CXXFLAGS += -I$(TOPDIR)/../extra_os
 
 HOSTCC = cc
 HOSTCFLAGS = $(ARCHWARNINGS) $(ARCHOPTIMIZATION) \

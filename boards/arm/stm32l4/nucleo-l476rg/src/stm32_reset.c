@@ -1,10 +1,8 @@
 /****************************************************************************
- * boards/arm/stm32l4/nucleo-l476rg/src/stm32_pulsecounter.c
+ * boards/arm/stm32/stm32f4discovery/src/stm32_reset.c
  *
- *   Copyright (C) 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2019 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
- *   Modified: Librae <librae8226@gmail.com>
- *   Modified: Matias Nitsche <mnitsche@dc.ub.ar>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,46 +39,57 @@
 
 #include <nuttx/config.h>
 
-#include <sys/types.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <errno.h>
-#include <debug.h>
-
 #include <nuttx/arch.h>
 #include <nuttx/board.h>
-#include <arch/board/boardctl.h>
-#include "stm32l4_gpio.h"
-
 #include "nucleo-l476rg.h"
+#include "stm32l4_dfumode.h"
+#include <nuttx/usb/composite.h>
+
+#ifdef CONFIG_BOARDCTL_RESET
 
 /****************************************************************************
- * Private Data
- ***************************************************************************/
-
-/****************************************************************************
- * Public Functions
+ * Public functions
  ****************************************************************************/
 
-#ifdef CONFIG_BOARDCTL_IOCTL
-int board_ioctl(unsigned int cmd, uintptr_t arg)
-{
-  switch(cmd)
-    {
-      case BOARDIOC_PULSECOUNTER_GET:
-        *((uint32_t*)arg) = stm32l4_pulsecounter_getcounter();
-      break;
-      case BOARDIOC_MOTOR_SET:
-        stm32l4_gpiowrite(GPIO_MOTOR, arg);
-      break;
-      case BOARDIOC_BATTERY_STATUS_GET:
-        *(uint8_t*)arg = (stm32l4_gpioread(GPIO_BAT_PG)    << 0) |
-                         (stm32l4_gpioread(GPIO_BAT_STAT1) << 1) |
-                         (stm32l4_gpioread(GPIO_BAT_STAT2) << 2);
-      break;
-    }
+/****************************************************************************
+ * Name: board_reset
+ *
+ * Description:
+ *   Reset board.  Support for this function is required by board-level
+ *   logic if CONFIG_BOARDCTL_RESET is selected.
+ *
+ * Input Parameters:
+ *   status - Status information provided with the reset event.  This
+ *            meaning of this status information is board-specific.  If not
+ *            used by a board, the value zero may be provided in calls to
+ *            board_reset().
+ *
+ * Returned Value:
+ *   If this function returns, then it was not possible to power-off the
+ *   board due to some constraints.  The return value int this case is a
+ *   board-specific reason for the failure to shutdown.
+ *
+ ****************************************************************************/
 
-  return OK;
-}
+int board_reset(int status)
+{
+#ifdef CONFIG_USBDEV_COMPOSITE
+  /* disable USB device in order to avoid confusing the host */
+
+  board_composite_disconnect();
 #endif
+
+  /* enter DFU mode or reset depending on passed value */
+
+  if (status == 1)
+  {
+    stm32l4_dfumode();
+  }
+  else
+  {
+    up_systemreset();
+  }
+  return 0;
+}
+
+#endif /* CONFIG_BOARDCTL_RESET */

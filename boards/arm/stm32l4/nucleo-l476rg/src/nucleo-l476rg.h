@@ -94,8 +94,25 @@
  * - When the I/O is LOW, the LED is off.
  */
 
+#define GPIO_LD1 \
+  (GPIO_PORTC | GPIO_PIN10 | GPIO_OUTPUT_CLEAR | GPIO_OUTPUT | GPIO_SPEED_50MHz)
 #define GPIO_LD2 \
-  (GPIO_PORTA | GPIO_PIN5 | GPIO_OUTPUT_CLEAR | GPIO_OUTPUT | GPIO_SPEED_50MHz)
+  (GPIO_PORTC | GPIO_PIN11 | GPIO_OUTPUT_CLEAR | GPIO_OUTPUT | GPIO_SPEED_50MHz)
+#define GPIO_LD3 \
+  (GPIO_PORTC | GPIO_PIN12 | GPIO_OUTPUT_CLEAR | GPIO_OUTPUT | GPIO_SPEED_50MHz)
+
+#define GPIO_MOTOR \
+  (GPIO_PORTC | GPIO_PIN9 | GPIO_OUTPUT_CLEAR | GPIO_OUTPUT | GPIO_SPEED_50MHz)
+
+#define GPIO_BAT_PG \
+  (GPIO_PORTA | GPIO_PIN1 | GPIO_INPUT | GPIO_PULLUP)
+#define GPIO_BAT_STAT1 \
+  (GPIO_PORTA | GPIO_PIN3 | GPIO_INPUT | GPIO_PULLUP)
+#define GPIO_BAT_STAT2 \
+  (GPIO_PORTA | GPIO_PIN2 | GPIO_INPUT | GPIO_PULLUP)
+
+#define GPIO_MC6470_ACC_INT \
+  (GPIO_PORTA | GPIO_PIN0 | GPIO_INPUT | GPIO_PULLUP | GPIO_EXTI)
 
 /* Buttons
  *
@@ -103,12 +120,18 @@
  * microcontroller.
  */
 
-#define MIN_IRQBUTTON   BUTTON_USER
-#define MAX_IRQBUTTON   BUTTON_USER
-#define NUM_IRQBUTTONS  1
+#define MIN_IRQBUTTON   GPIO_BTN_BL
+#define MAX_IRQBUTTON   GPIO_BTN_UR
+#define NUM_IRQBUTTONS  4
 
-#define GPIO_BTN_USER \
-  (GPIO_INPUT |GPIO_FLOAT |GPIO_EXTI | GPIO_PORTC | GPIO_PIN13)
+#define GPIO_BTN_BL \
+  (GPIO_INPUT |GPIO_PULLUP |GPIO_EXTI | GPIO_PORTH | GPIO_PIN0)
+#define GPIO_BTN_UL \
+  (GPIO_INPUT |GPIO_PULLUP |GPIO_EXTI | GPIO_PORTC | GPIO_PIN13)
+#define GPIO_BTN_BR \
+  (GPIO_INPUT |GPIO_PULLUP |GPIO_EXTI | GPIO_PORTC | GPIO_PIN4)
+#define GPIO_BTN_UR \
+  (GPIO_INPUT |GPIO_PULLUP |GPIO_EXTI | GPIO_PORTD | GPIO_PIN2)
 
 /* The shield uses the following pins:
  *
@@ -161,10 +184,10 @@
 #endif
 
 #ifdef CONFIG_LCD_SHARP_MEMLCD
-#define GPIO_MEMLCD_DISP     (GPIO_PORTC | GPIO_PIN10 | GPIO_OUTPUT_CLEAR | \
+#define GPIO_MEMLCD_DISP     (GPIO_PORTA | GPIO_PIN6 | GPIO_OUTPUT_CLEAR | \
                               GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz)
 
-#define GPIO_MEMLCD_CS       (GPIO_PORTC | GPIO_PIN12 | GPIO_OUTPUT_CLEAR | \
+#define GPIO_MEMLCD_CS       (GPIO_PORTA | GPIO_PIN4 | GPIO_OUTPUT_CLEAR | \
                               GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_50MHz)
 #endif
 
@@ -214,6 +237,7 @@
 #define ADC_XOUPUT   1 /* X output is on ADC channel 1 */
 #define ADC_YOUPUT   0 /* Y output is on ADC channel 0 */
 
+#if 0
 #define GPIO_BUTTON_A \
   (GPIO_INPUT | GPIO_PULLUP |GPIO_EXTI | GPIO_PORTA | GPIO_PIN8)
 #define GPIO_BUTTON_B \
@@ -228,6 +252,7 @@
   (GPIO_INPUT | GPIO_PULLUP |GPIO_EXTI | GPIO_PORTA | GPIO_PIN9)
 #define GPIO_BUTTON_G \
   (GPIO_INPUT | GPIO_PULLUP |GPIO_EXTI | GPIO_PORTC | GPIO_PIN7)
+#endif
 
 /* Itead Joystick Signal interpretation:
  *
@@ -279,6 +304,9 @@
 #define GPIO_HTS221_INT   (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTA | GPIO_PIN10)
 #define GPIO_LSM6DSL_INT1 (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | GPIO_PIN4)
 #define GPIO_LSM6DSL_INT2 (GPIO_INPUT | GPIO_FLOAT | GPIO_PORTB | GPIO_PIN5)
+
+#define GPIO_OTGFS_VBUS   (GPIO_INPUT|GPIO_FLOAT|GPIO_SPEED_100MHz|\
+                           GPIO_OPENDRAIN|GPIO_PORTA|GPIO_PIN9)
 
 /****************************************************************************
  * Public Data
@@ -454,8 +482,22 @@ int stm32_as726xinitialize(FAR const char *devpath);
 int stm32_bmp180initialize(FAR const char *devpath);
 #endif
 
+/****************************************************************************
+ * Name: stm32_bmp280initialize
+ *
+ * Description:
+ * Called to configure an I2C and to register BMP180.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SENSORS_BMP280
+int stm32_bmp280initialize(FAR const char *devpath);
+#endif
+
 void stm32l4_pulsecounter_initialize(void);
 void stm32l4_pulsecounter_deinitialize(void);
 uint32_t stm32l4_pulsecounter_getcounter(void);
+
+void board_composite_disconnect(void);
 
 #endif /* __BOARDS_ARM_STM32L4_NUCLEO_L476RG_SRC_NUCLEO_L476RG_H */

@@ -101,12 +101,14 @@
  *        PB6   CN5 pin 3, CN10 pin 17
  */
 
+#if 0
 #if 1
 #  define GPIO_USART1_RX GPIO_USART1_RX_1    /* PA10 */
 #  define GPIO_USART1_TX GPIO_USART1_TX_1    /* PA9  */
 #else
 #  define GPIO_USART1_RX GPIO_USART1_RX_2    /* PB7 */
 #  define GPIO_USART1_TX GPIO_USART1_TX_2    /* PB6  */
+#endif
 #endif
 
 /* USART2: Connected to STLInk Debug via PA2, PA3
@@ -116,10 +118,13 @@
  *        PD5
  */
 
+#if 0
 #define GPIO_USART2_RX   GPIO_USART2_RX_1    /* PA3 */
 #define GPIO_USART2_TX   GPIO_USART2_TX_1    /* PA2 */
 #define GPIO_USART2_RTS  GPIO_USART2_RTS_2
 #define GPIO_USART2_CTS  GPIO_USART2_CTS_2
+#endif
+
 
 /* USART3:
  *   RXD: PA10  CN9 pin 3, CN10 pin 33
@@ -130,11 +135,13 @@
  *        PC10  CN7 pin 1
  */
 
-#define GPIO_USART3_RX   GPIO_USART3_RX_3    /* PC11 */
-#define GPIO_USART3_TX   GPIO_USART3_TX_3    /* PC10 */
+#define GPIO_USART3_RX   GPIO_USART3_RX_1    /* PB11 */
+#define GPIO_USART3_TX   GPIO_USART3_TX_1    /* PB10 */
 
+#if 0
 #define GPIO_UART4_RX    GPIO_UART4_RX_1     /* PA1 */
 #define GPIO_UART4_TX    GPIO_UART4_TX_1     /* PA0 */
+#endif
 
 /* I2C
  *
@@ -144,16 +151,19 @@
  */
 
 #define GPIO_I2C1_SCL \
-   (GPIO_I2C1_SCL_2 | GPIO_OPENDRAIN | GPIO_SPEED_50MHz | GPIO_OUTPUT_SET)
+   (GPIO_I2C1_SCL_1 | GPIO_OPENDRAIN | GPIO_SPEED_50MHz | GPIO_OUTPUT_SET)
 #define GPIO_I2C1_SDA \
-   (GPIO_I2C1_SDA_2 | GPIO_OPENDRAIN | GPIO_SPEED_50MHz | GPIO_OUTPUT_SET)
+   (GPIO_I2C1_SDA_1 | GPIO_OPENDRAIN | GPIO_SPEED_50MHz | GPIO_OUTPUT_SET)
+#if 0
 #define GPIO_I2C1_SCL_GPIO \
    (GPIO_OUTPUT | GPIO_OPENDRAIN | GPIO_SPEED_50MHz | GPIO_OUTPUT_SET | \
     GPIO_PORTB | GPIO_PIN8)
 #define GPIO_I2C1_SDA_GPIO \
    (GPIO_OUTPUT | GPIO_OPENDRAIN | GPIO_SPEED_50MHz | GPIO_OUTPUT_SET | \
     GPIO_PORTB | GPIO_PIN9)
+#endif
 
+#if 0
 #define GPIO_I2C2_SCL \
    (GPIO_I2C2_SCL_1 | GPIO_OPENDRAIN | GPIO_SPEED_50MHz | GPIO_OUTPUT_SET)
 #define GPIO_I2C2_SDA \
@@ -164,16 +174,20 @@
 #define GPIO_I2C2_SDA_GPIO \
    (GPIO_OUTPUT | GPIO_OPENDRAIN | GPIO_SPEED_50MHz | GPIO_OUTPUT_SET | \
     GPIO_PORTB | GPIO_PIN11)
+#endif
+
 
 /* SPI */
 
-#define GPIO_SPI1_MISO   GPIO_SPI1_MISO_2     /* PB4 */
-#define GPIO_SPI1_MOSI   GPIO_SPI1_MOSI_2     /* PB5 */
-#define GPIO_SPI1_SCK    GPIO_SPI1_SCK_2      /* PB3 */
+#define GPIO_SPI1_MISO   GPIO_SPI1_MISO_1     /* PA6 -> not used */
+#define GPIO_SPI1_MOSI   GPIO_SPI1_MOSI_1     /* PA7 */
+#define GPIO_SPI1_SCK    GPIO_SPI1_SCK_1      /* PA5 */
 
+#if 0
 #define GPIO_SPI2_MISO   GPIO_SPI2_MISO_1     /* PB14 */
 #define GPIO_SPI2_MOSI   GPIO_SPI2_MOSI_1     /* PB15 */
 #define GPIO_SPI2_SCK    GPIO_SPI2_SCK_2      /* PB13 */
+#endif
 
 /* LEDs
  *
@@ -187,12 +201,16 @@
 
 /* LED index values for use with board_userled() */
 
-#define BOARD_LD2         0
-#define BOARD_NLEDS       1
+#define BOARD_LD1         0
+#define BOARD_LD2         1
+#define BOARD_LD3         2
+#define BOARD_NLEDS       3
 
 /* LED bits for use with board_userled_all() */
 
+#define BOARD_LD1_BIT     (1 << BOARD_LD1)
 #define BOARD_LD2_BIT     (1 << BOARD_LD2)
+#define BOARD_LD3_BIT     (1 << BOARD_LD3)
 
 /* These LEDs are not used by the board port unless CONFIG_ARCH_LEDS is
  * defined.  In that case, the usage by the board port is defined in
@@ -216,15 +234,15 @@
  * has been detected and the system has halted.
  */
 
-#define LED_STARTED      0
-#define LED_HEAPALLOCATE 0
-#define LED_IRQSENABLED  0
-#define LED_STACKCREATED 0
-#define LED_INIRQ        0
-#define LED_SIGNAL       0
-#define LED_ASSERTION    0
-#define LED_PANIC        1
-#define LED_IDLE         1
+#define LED_STARTED      1
+#define LED_HEAPALLOCATE 1
+#define LED_IRQSENABLED  1
+#define LED_STACKCREATED 1
+#define LED_INIRQ        2
+#define LED_SIGNAL       3
+#define LED_ASSERTION    3
+#define LED_PANIC        3
+#define LED_IDLE         3
 
 /* Buttons
  *
@@ -232,15 +250,22 @@
  *   microcontroller.
  */
 
-#define BUTTON_USER        0
-#define NUM_BUTTONS        1
+#define BOARD_BUTTON_BL          0
+#define BOARD_BUTTON_BR          1
+#define BOARD_BUTTON_UL          2
+#define BOARD_BUTTON_UR          3
+#define NUM_BUTTONS              4
 
-#define BUTTON_USER_BIT    (1 << BUTTON_USER)
+#define BUTTON_BL_BIT    (1 << BOARD_BUTTON_BL)
+#define BUTTON_BR_BIT    (1 << BOARD_BUTTON_BR)
+#define BUTTON_UL_BIT    (1 << BOARD_BUTTON_UL)
+#define BUTTON_UR_BIT    (1 << BOARD_BUTTON_UR)
 
 /* Quadrature encoder
  * Default is to use timer 5 (32-bit) and encoder on PA0/PA1
  */
 
+#if 0
 #define GPIO_TIM2_CH1IN GPIO_TIM2_CH1IN_1
 #define GPIO_TIM2_CH2IN GPIO_TIM2_CH2IN_1
 
@@ -249,6 +274,7 @@
 
 #define GPIO_TIM5_CH1IN GPIO_TIM5_CH1IN_1
 #define GPIO_TIM5_CH2IN GPIO_TIM5_CH2IN_1
+#endif
 
 /* PWM output for full bridge, uses config 1, because port E is N/A on QFP64
  * CH1     | 1(A8) 2(E9)
@@ -257,12 +283,14 @@
  * CHN2    | 1(B0) 2(B14) 3(E10)
  */
 
+#if 0
 #define GPIO_TIM1_CH1OUT  GPIO_TIM1_CH1OUT_1
 #define GPIO_TIM1_CH1NOUT GPIO_TIM1_CH1N_1
 #define GPIO_TIM1_CH2OUT  GPIO_TIM1_CH2OUT_1
 #define GPIO_TIM1_CH2NOUT GPIO_TIM1_CH2N_1
+#endif
 
-#define GPIO_LPTIM1_CH1OUT  GPIO_LPTIM1_OUT_2
+#define GPIO_LPTIM1_CH1OUT  GPIO_LPTIM1_OUT_1
 
 /****************************************************************************
  * Public Data

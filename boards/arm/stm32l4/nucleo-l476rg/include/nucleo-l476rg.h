@@ -398,8 +398,8 @@
 /* Use the MSI; frequ = 4 MHz; autotrim from LSE */
 
 #define STM32L4_BOARD_USEMSI      1
-#define STM32L4_BOARD_MSIRANGE    RCC_CR_MSIRANGE_24M
-//#define STM32L4_BOARD_MSIRANGE    RCC_CR_MSIRANGE_24M
+#define STM32L4_BOARD_MSIRANGE    RCC_CR_MSIRANGE_48M
+// TODO: finish I2C computations and go back to 24M
 
 /* disable main PLL and use MSI for SYSCLK */
 #define STM32L4_BOARD_NOPLL
@@ -441,7 +441,7 @@
 #undef  STM32L4_PLLSAI2CFG_PLLR_ENABLED
 
 /* for MSI SYSCLK */
-#define STM32L4_SYSCLK_FREQUENCY  24000000ul
+#define STM32L4_SYSCLK_FREQUENCY  48000000ul
 //#define STM32L4_SYSCLK_FREQUENCY  24000000ul
 
 /* for MSI->PLL SYSCLK */
@@ -450,7 +450,7 @@
 /* Enable CLK48; get it from PLLSAI1 */
 
 #define STM32L4_USE_CLK48
-#define STM32L4_CLK48_SEL         RCC_CCIPR_CLK48SEL_PLLSAI1
+#define STM32L4_CLK48_SEL         RCC_CCIPR_CLK48SEL_MSI
 
 /* Enable LSE (for the RTC) */
 
@@ -509,6 +509,9 @@
 #define BOARD_TIM17_FREQUENCY     STM32L4_HCLK_FREQUENCY
 #define STM32L4_LPTIM1_FREQUENCY  STM32L4_HCLK_FREQUENCY
 #define STM32L4_LPTIM2_FREQUENCY  STM32L4_HCLK_FREQUENCY
+
+#define GPIO_TIM4_CH4OUT          GPIO_TIM4_CH4OUT_1
+#define STM32L4_APB1_TIM4_CLKIN   STM32L4_PCLK1_FREQUENCY
 
 /****************************************************************************
  * Public Data

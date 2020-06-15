@@ -86,7 +86,7 @@ void stm32l4_board_initialize(void)
    * into the build.
    */
 
-#if defined(CONFIG_USBDEV) && defined(CONFIG_STM32L4_USB)
+#if defined(CONFIG_STM32L4_OTGFS)
   stm32l4_usbinitialize();
 #endif
 }

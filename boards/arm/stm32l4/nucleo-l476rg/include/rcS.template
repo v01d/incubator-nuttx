@@ -1,0 +1,7 @@
+# connect USB composite devices
+#conn
+
+# create pseudo-terminal on USB serial device
+#pts &
+
+bicycle_companion

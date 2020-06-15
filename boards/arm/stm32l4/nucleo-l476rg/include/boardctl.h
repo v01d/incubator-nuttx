@@ -52,7 +52,9 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define BOARDIOC_PULSECOUNTER_GET (BOARDIOC_USER + 0) /* arg = uint32_t* */
+#define BOARDIOC_PULSECOUNTER_GET   (BOARDIOC_USER + 0) /* arg = uint32_t* : pointer to counter value */
+#define BOARDIOC_MOTOR_SET          (BOARDIOC_USER + 1) /* arg = int : on or off */
+#define BOARDIOC_BATTERY_STATUS_GET (BOARDIOC_USER + 2) /* arg = uint8_t* : pointer to bitmaks: PG, STAT1, STAT2 */
 
 #ifndef __ASSEMBLY__
 

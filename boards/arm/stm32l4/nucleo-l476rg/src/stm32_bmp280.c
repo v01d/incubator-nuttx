@@ -1,10 +1,8 @@
 /****************************************************************************
- * boards/arm/stm32l4/nucleo-l476rg/src/stm32_pulsecounter.c
+ * boards/arm/stm32l4/nucleo-l476rg/src/stm32_bmp280.c
  *
- *   Copyright (C) 2011 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
- *   Modified: Librae <librae8226@gmail.com>
- *   Modified: Matias Nitsche <mnitsche@dc.ub.ar>
+ *   Copyright (C) 2015 Alan Carvalho de Assis. All rights reserved.
+ *   Author: Alan Carvalho de Assis <acassis@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,46 +39,61 @@
 
 #include <nuttx/config.h>
 
-#include <sys/types.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
 #include <errno.h>
 #include <debug.h>
 
-#include <nuttx/arch.h>
-#include <nuttx/board.h>
-#include <arch/board/boardctl.h>
-#include "stm32l4_gpio.h"
+#include <nuttx/spi/spi.h>
+#include <nuttx/sensors/bmp280.h>
 
+#include "stm32l4.h"
+#include "stm32l4_i2c.h"
 #include "nucleo-l476rg.h"
 
-/****************************************************************************
- * Private Data
- ***************************************************************************/
+#if defined(CONFIG_I2C) && defined(CONFIG_SENSORS_BMP280)
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-#ifdef CONFIG_BOARDCTL_IOCTL
-int board_ioctl(unsigned int cmd, uintptr_t arg)
+/****************************************************************************
+ * Name: stm32_bmp280initialize
+ *
+ * Description:
+ *   Initialize and register the MPL115A Pressure Sensor driver.
+ *
+ * Input Parameters:
+ *   devpath - The full path to the driver to register. E.g., "/dev/press0"
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+int stm32_bmp280initialize(FAR const char *devpath)
 {
-  switch(cmd)
+  FAR struct i2c_master_s *i2c;
+  int ret;
+
+  sninfo("Initializing bmp280!\n");
+
+  /* Initialize I2C */
+
+  i2c = stm32l4_i2cbus_initialize(1);
+
+  if (!i2c)
     {
-      case BOARDIOC_PULSECOUNTER_GET:
-        *((uint32_t*)arg) = stm32l4_pulsecounter_getcounter();
-      break;
-      case BOARDIOC_MOTOR_SET:
-        stm32l4_gpiowrite(GPIO_MOTOR, arg);
-      break;
-      case BOARDIOC_BATTERY_STATUS_GET:
-        *(uint8_t*)arg = (stm32l4_gpioread(GPIO_BAT_PG)    << 0) |
-                         (stm32l4_gpioread(GPIO_BAT_STAT1) << 1) |
-                         (stm32l4_gpioread(GPIO_BAT_STAT2) << 2);
-      break;
+      return -ENODEV;
     }
 
-  return OK;
+  /* Then register the barometer sensor */
+
+  ret = bmp280_register(devpath, i2c);
+  if (ret < 0)
+    {
+      snerr("ERROR: Error registering BM180\n");
+    }
+
+  return ret;
 }
-#endif
+
+#endif /* CONFIG_I2C && CONFIG_SENSORS_BMP280 */

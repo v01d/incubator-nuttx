@@ -49,7 +49,7 @@
 #include "chip.h"
 #include "arm_arch.h"
 
-#include "stm32l4_pwm.h"
+#include "stm32l4_adc.h"
 #include "nucleo-l476rg.h"
 
 #ifdef CONFIG_STM32L4_ADC1
@@ -58,42 +58,13 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* The number of ADC channels in the conversion list */
-
-#ifdef CONFIG_ADC_DMA
-#  define ADC1_NCHANNELS 2
-#else
-#  define ADC1_NCHANNELS 1
-#endif
+#define BATTERY_ADC_INTERFACE 1
+#define BATTERY_ADC_CHANNEL   4
+#define BATTERY_ADC_GPIO      GPIO_ADC1_IN4
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-/* Identifying number of each ADC channel. */
-
-#ifdef CONFIG_AJOYSTICK
-#ifdef CONFIG_ADC_DMA
-/* The Itead analog joystick gets inputs on ADC_IN1 and ADC_IN2 */
-
-static const uint8_t  g_adc1_chanlist[ADC1_NCHANNELS] = {1, 2};
-
-/* Configurations of pins used byte each ADC channels */
-
-static const uint32_t g_adc1_pinlist[ADC1_NCHANNELS]  = {GPIO_ADC1_IN1, GPIO_ADC1_IN2};
-
-#else
-/* Without DMA, only a single channel can be supported */
-
-/* The Itead analog joystick gets input on ADC_IN1 */
-
-static const uint8_t  g_adc1_chanlist[ADC1_NCHANNELS] = {1};
-
-/* Configurations of pins used byte each ADC channels */
-
-static const uint32_t g_adc1_pinlist[ADC1_NCHANNELS]  = {GPIO_ADC1_IN1};
-
-#endif /* CONFIG_ADC_DMA */
-#endif /* CONFIG_AJOYSTICK */
 
 /****************************************************************************
  * Private Functions
@@ -115,27 +86,21 @@ int stm32l4_adc_setup(void)
 {
   struct adc_dev_s *adc;
   int ret;
-  int i;
+  uint8_t channel_list[] = { BATTERY_ADC_CHANNEL };
 
-  /* Configure the pins as analog inputs for the selected channels */
+  stm32l4_configgpio(BATTERY_ADC_GPIO);
+  stm32l4_configgpio(GPIO_ADC1_IN15);
+  stm32l4_configgpio(GPIO_ADC1_IN16);
 
-  for (i = 0; i < ADC1_NCHANNELS; i++)
-    {
-      stm32l4_configgpio(g_adc1_pinlist[i]);
-    }
-
-  /* Call stm32l4_adc_initialize() to get an instance of the ADC interface */
-
-  adc = stm32l4_adc_initialize(1, g_adc1_chanlist, ADC1_NCHANNELS);
+  adc = stm32l4_adc_initialize(BATTERY_ADC_INTERFACE, channel_list, 1);
   if (adc == NULL)
     {
       aerr("ERROR: Failed to get ADC interface\n");
       return -ENODEV;
     }
 
-  /* Register the ADC driver at "/dev/adc0" */
 
-  ret = adc_register("/dev/adc0", adc);
+  ret = adc_register("/dev/batt", adc);
   if (ret < 0)
     {
       aerr("ERROR: adc_register failed: %d\n", ret);

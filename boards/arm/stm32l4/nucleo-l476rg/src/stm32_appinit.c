@@ -56,6 +56,7 @@
 #include <stm32l4_uart.h>
 
 #include <arch/board/board.h>
+#include <nuttx/leds/userled.h>
 
 #ifdef CONFIG_LCD_DEV
 #include <lcd_dev/lcd_dev.h>
@@ -70,23 +71,40 @@
 
 #include <nuttx/input/buttons.h>
 
+#include <nuttx/timers/oneshot.h>
+#include <nuttx/audio/tone.h>
+#include "stm32l4_pwm.h"
+
+#include <nuttx/mtd/mtd.h>
+#include <nuttx/mtd/configdata.h>
+#include <mc6470/mc6470_acc.h>
+#include <mc6470/mc6470_mag.h>
+
 #include "stm32l4_i2c.h"
+#include "stm32l4_dfumode.h"
+
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+static void mc6470_acc_enable_int(xcpt_t irqhandler, void* arg)
+{
+  stm32l4_gpiosetevent(GPIO_MC6470_ACC_INT, false, true, false, irqhandler, arg);
+}
 
 /****************************************************************************
  * Private Data
  ***************************************************************************/
 
+struct mc6470_acc_lower_dev_s g_mc6470_lower =
+{
+  .enable_irq = &mc6470_acc_enable_int
+};
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
-/* Checking needed by MMC/SDCard */
-
-#ifdef CONFIG_NSH_MMCSDMINOR
-#  define MMCSD_MINOR       CONFIG_NSH_MMCSDMINOR
-#else
-#  define MMCSD_MINOR       0
-#endif
 
 /****************************************************************************
  * Name: stm32_i2c_register
@@ -132,10 +150,6 @@ static void stm32_i2c_register(int bus)
 static void stm32_i2ctool(void)
 {
   stm32_i2c_register(1);
-#if 0
-  stm32_i2c_register(1);
-  stm32_i2c_register(2);
-#endif
 }
 #else
 #  define stm32_i2ctool()
@@ -170,16 +184,24 @@ int board_app_initialize(uintptr_t arg)
 {
 #ifdef HAVE_RTC_DRIVER
   FAR struct rtc_lowerhalf_s *rtclower;
+  struct i2c_master_s* i2c;
+#endif
+
+#ifdef CONFIG_BUTTONS_LOWER
+  btn_lower_initialize("/dev/buttons");
+
+  /* test buttons to enter bootloader */
+
+  if (board_buttons() & BUTTON_UL_BIT)
+  {
+    stm32l4_dfumode();
+  }
 #endif
 
 #if defined(CONFIG_I2C) && defined(CONFIG_SYSTEM_I2CTOOL)
   stm32_i2ctool();
 #endif
 
-#ifdef CONFIG_SENSORS_QENCODER
-  int index;
-  char buf[9];
-#endif
   int ret = OK;
 
 #ifdef HAVE_PROC
@@ -221,62 +243,12 @@ int board_app_initialize(uintptr_t arg)
     }
 #endif
 
-#ifdef HAVE_MMCSD_SDIO
-  /* First, get an instance of the SDIO interface */
-
-  g_sdio = sdio_initialize(CONFIG_NSH_MMCSDSLOTNO);
-  if (!g_sdio)
-    {
-      syslog(LOG_ERR, "ERROR: Failed to initialize SDIO slot %d\n",
-             CONFIG_NSH_MMCSDSLOTNO);
-      return -ENODEV;
-    }
-
-  /* Now bind the SDIO interface to the MMC/SD driver */
-
-  ret = mmcsd_slotinitialize(CONFIG_NSH_MMCSDMINOR, g_sdio);
+#ifdef CONFIG_SENSORS_BMP280
+  ret = stm32_bmp280initialize("/dev/press0");
   if (ret < 0)
     {
-      syslog(LOG_ERR,
-             "ERROR: Failed to bind SDIO to the MMC/SD driver: %d\n",
-             ret);
+      syslog(LOG_ERR, "Failed to initialize BMP280, error %d\n", ret);
       return ret;
-    }
-
-  /* Then let's guess and say that there is a card in the slot. There is no
-   * card detect GPIO.
-   */
-
-  sdio_mediachange(g_sdio, true);
-
-  syslog(LOG_INFO, "[boot] Initialized SDIO\n");
-#endif
-
-#ifdef CONFIG_SENSORS_AS726X
-  ret = stm32_as726xinitialize("/dev/spectr0");
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "Failed to initialize AS726X, error %d\n", ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_SENSORS_BMP180
-  ret = stm32_bmp180initialize("/dev/press0");
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "Failed to initialize BMP180, error %d\n", ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_PWM
-  /* Initialize PWM and register the PWM device. */
-
-  ret = stm32l4_pwm_setup();
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: stm32l4_pwm_setup() failed: %d\n", ret);
     }
 #endif
 
@@ -290,172 +262,11 @@ int board_app_initialize(uintptr_t arg)
     }
 #endif
 
-#ifdef CONFIG_CAN
-  ret = stm32l4_can_setup();
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: stm32l4_can_setup failed: %d\n", ret);
-      return ret;
-    }
-#endif
-
-/* Initialize MMC and register the MMC driver. */
-
-#ifdef HAVE_MMCSD_SPI
-  ret = stm32l4_mmcsd_initialize(MMCSD_MINOR);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "Failed to initialize SD slot %d: %d\n", ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_AJOYSTICK
-  /* Initialize and register the joystick driver */
-
-  ret = board_ajoy_initialize();
-  if (ret < 0)
-    {
-      syslog(LOG_ERR,
-             "ERROR: Failed to register the joystick driver: %d\n",
-             ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_TIMER
-  /* Initialize and register the timer driver */
-
-  ret = board_timer_driver_initialize("/dev/timer0", 2);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR,
-             "ERROR: Failed to register the timer driver: %d\n",
-             ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_SENSORS_QENCODER
-  /* Initialize and register the qencoder driver */
-
-  index = 0;
-
-#ifdef CONFIG_STM32L4_TIM1_QE
-  sprintf(buf, "/dev/qe%d", index++);
-  ret = stm32l4_qencoder_initialize(buf, 1);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR,
-             "ERROR: Failed to register the qencoder: %d\n",
-             ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_STM32L4_TIM2_QE
-  sprintf(buf, "/dev/qe%d", index++);
-  ret = stm32l4_qencoder_initialize(buf, 2);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR,
-             "ERROR: Failed to register the qencoder: %d\n",
-             ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_STM32L4_TIM3_QE
-  sprintf(buf, "/dev/qe%d", index++);
-  ret = stm32l4_qencoder_initialize(buf, 3);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR,
-             "ERROR: Failed to register the qencoder: %d\n",
-             ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_STM32L4_TIM4_QE
-  sprintf(buf, "/dev/qe%d", index++);
-  ret = stm32l4_qencoder_initialize(buf, 4);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR,
-             "ERROR: Failed to register the qencoder: %d\n",
-             ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_STM32L4_TIM5_QE
-  sprintf(buf, "/dev/qe%d", index++);
-  ret = stm32l4_qencoder_initialize(buf, 5);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR,
-             "ERROR: Failed to register the qencoder: %d\n",
-             ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_STM32L4_TIM8_QE
-  sprintf(buf, "/dev/qe%d", index++);
-  ret = stm32l4_qencoder_initialize(buf, 8);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR,
-             "ERROR: Failed to register the qencoder: %d\n",
-             ret);
-      return ret;
-    }
-#endif
-#endif /* CONFIG_SENSORS_QENCODER */
-
-#ifdef CONFIG_SENSORS_HTS221
-  ret = stm32l4_hts221_initialize("/dev/hts221");
-  if (ret < 0)
-    {
-      serr("ERROR: Failed to initialize HTC221 driver: %d\n", ret);
-    }
-#endif
-
-#ifdef CONFIG_SENSORS_LSM6DSL
-  ret = stm32l4_lsm6dsl_initialize("/dev/lsm6dsl0");
-  if (ret < 0)
-    {
-      serr("ERROR: Failed to initialize LSM6DSL driver: %d\n", ret);
-    }
-#endif
-
-#ifdef CONFIG_SENSORS_LSM303AGR
-  ret = stm32l4_lsm303agr_initialize("/dev/lsm303mag0");
-  if (ret < 0)
-    {
-      serr("ERROR: Failed to initialize LSM303AGR driver: %d\n", ret);
-    }
-#endif
-
 #ifdef CONFIG_DEV_GPIO
   ret = stm32l4_gpio_initialize();
   if (ret < 0)
     {
       syslog(LOG_ERR, "Failed to initialize GPIO Driver: %d\n", ret);
-      return ret;
-    }
-#endif
-
-#ifdef CONFIG_WL_CC1101
-  /* Initialize and register the cc1101 radio */
-
-  ret = stm32l4_cc1101_initialize();
-  if (ret < 0)
-    {
-      syslog(LOG_ERR,
-             "ERROR: stm32l4_cc1101_initialize failed: %d\n",
-             ret);
       return ret;
     }
 #endif
@@ -470,11 +281,42 @@ int board_app_initialize(uintptr_t arg)
   lcddev_register(0);
 #endif
 
-#ifdef CONFIG_BUTTONS_LOWER
-  btn_lower_initialize("/dev/buttons");
-#endif
+  struct pwm_lowerhalf_s* pwm = stm32l4_pwminitialize(4);
+
+#ifdef CONFIG_AUDIO_TONE
+  {
+    struct oneshot_lowerhalf_s* oneshot = oneshot_initialize(3, 10); /* TIM3, 10us resolution */
+    pwm->ops->setup(pwm);
+    tone_register("/dev/buzzer", pwm, oneshot);
+  }
+
+  pwm_register("/dev/buzzer_pwm", pwm);
+#endif  
+
+  /* initialize some GPIOs */
+
+  stm32l4_configgpio(GPIO_MOTOR);
+
+  stm32l4_configgpio(GPIO_BAT_PG);
+  stm32l4_configgpio(GPIO_BAT_STAT1);
+  stm32l4_configgpio(GPIO_BAT_STAT2);
+
+  /* initialize I2C devices */
+
+  i2c = stm32l4_i2cbus_initialize(1);
+
+  stm32l4_configgpio(GPIO_MC6470_ACC_INT);
+
+  mc6470_acc_register("/dev/acc", i2c, &g_mc6470_lower);
+  mc6470_mag_register("/dev/mag", i2c);
+
+  mtdconfig_register(at24c_initialize(i2c));
 
   stm32l4_pulsecounter_initialize();
+
+#ifndef CONFIG_ARCH_LEDS
+  userled_lower_initialize("/dev/userleds");
+#endif
 
   return ret;
 }

@@ -35,7 +35,7 @@
 
 include $(TOPDIR)/Make.defs
 
-CSRCS = stm32_boot.c stm32_spi.c
+CSRCS = stm32_boot.c stm32_spi.c stm32_reset.c
 
 ifeq ($(CONFIG_ARCH_LEDS),y)
 CSRCS += stm32_autoleds.c
@@ -100,6 +100,10 @@ ifeq ($(CONFIG_SENSORS_BMP180),y)
 CSRCS += stm32_bmp180.c
 endif
 
+ifeq ($(CONFIG_SENSORS_BMP280),y)
+CSRCS += stm32_bmp280.c
+endif
+
 ifeq ($(CONFIG_PWM),y)
 CSRCS += stm32_pwm.c
 endif
@@ -114,6 +118,14 @@ endif
 
 ifeq ($(CONFIG_LIB_BOARDCTL),y)
 CSRCS += stm32_appinit.c stm32_boardctl.c
+endif
+
+ifeq ($(CONFIG_STM32L4_OTGFS),y)
+CSRCS += stm32_usb.c
+endif
+
+ifeq ($(CONFIG_USBDEV_COMPOSITE),y)
+CSRCS += stm32_composite.c
 endif
 
 CSRCS += stm32_pulsecounter.c
